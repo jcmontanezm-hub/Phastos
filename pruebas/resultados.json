@@ -1,0 +1,294 @@
+{
+  "fecha": "2026-11-04T12:32:25.874Z",
+  "url": "http://localhost:8765/",
+  "resultados": [
+    {
+      "nivel": 1,
+      "id": "L1-01",
+      "nombre": "Mensaje vacío o solo espacios no se envía",
+      "pasa": true,
+      "detalle": "llamadas a la API: 0",
+      "ms": 642
+    },
+    {
+      "nivel": 1,
+      "id": "L1-02",
+      "nombre": "Texto con HTML/script no se ejecuta (XSS)",
+      "pasa": true,
+      "detalle": "código ejecutado: false, imágenes inyectadas: 0",
+      "ms": 1169
+    },
+    {
+      "nivel": 1,
+      "id": "L1-03",
+      "nombre": "Doble envío rápido no duplica la consulta",
+      "pasa": true,
+      "detalle": "llamadas: 1",
+      "ms": 1485
+    },
+    {
+      "nivel": 1,
+      "id": "L1-04",
+      "nombre": "Mensaje muy largo (8.000 caracteres)",
+      "pasa": true,
+      "detalle": "respuesta: Recibido.",
+      "ms": 1156
+    },
+    {
+      "nivel": 1,
+      "id": "L1-05",
+      "nombre": "La voz no lee URLs, markdown ni emojis de formato",
+      "pasa": true,
+      "detalle": "dijo: «Listo: mira y codigo fin»",
+      "ms": 1127
+    },
+    {
+      "nivel": 1,
+      "id": "L1-06",
+      "nombre": "Diccionario de pronunciación (Claude → Clod)",
+      "pasa": true,
+      "detalle": "dijo: «Uso Clod por guaifai, soy Fastos»",
+      "ms": 1132
+    },
+    {
+      "nivel": 2,
+      "id": "L2-01",
+      "nombre": "Datos guardados corruptos (JSON inválido) no impiden arrancar",
+      "pasa": true,
+      "detalle": "errores JS: ninguno",
+      "ms": 545
+    },
+    {
+      "nivel": 2,
+      "id": "L2-02",
+      "nombre": "Sin API key: avisa y no llama a la API",
+      "pasa": true,
+      "detalle": "llamadas: 0, ajustes abiertos: true",
+      "ms": 639
+    },
+    {
+      "nivel": 2,
+      "id": "L2-03",
+      "nombre": "Almacenamiento bloqueado (modo privado estricto)",
+      "pasa": true,
+      "detalle": "errores JS: ninguno",
+      "ms": 558
+    },
+    {
+      "nivel": 2,
+      "id": "L2-04",
+      "nombre": "Contacto que no existe: Claude recibe el error y responde",
+      "pasa": true,
+      "detalle": "tool_result: {\"error\":\"No tengo a \\\"Batman\\\" en contactos rápidos. Pide el número o que lo agregue en Ajustes.\"}",
+      "ms": 1145
+    },
+    {
+      "nivel": 2,
+      "id": "L2-05",
+      "nombre": "Recordatorio con fecha inválida o en el pasado",
+      "pasa": true,
+      "detalle": "errores devueltos: 2/2, guardados: 0",
+      "ms": 1160
+    },
+    {
+      "nivel": 2,
+      "id": "L2-06",
+      "nombre": "Herramienta desconocida o sin parámetros",
+      "pasa": true,
+      "detalle": "resultados con error: 3/3",
+      "ms": 1125
+    },
+    {
+      "nivel": 2,
+      "id": "L2-07",
+      "nombre": "Pronunciación con caracteres especiales (C++, .NET)",
+      "pasa": true,
+      "detalle": "dijo: «Aprendí ce más más y dot net»",
+      "ms": 1129
+    },
+    {
+      "nivel": 3,
+      "id": "L3-01",
+      "nombre": "API responde 401 (API key no válida)",
+      "pasa": true,
+      "detalle": "aviso: «La API key no es válida. Revísala en Ajustes.» · siguiente mensaje: «recuperado»",
+      "ms": 2143
+    },
+    {
+      "nivel": 3,
+      "id": "L3-02",
+      "nombre": "API responde 429 (límite / sin saldo)",
+      "pasa": true,
+      "detalle": "aviso: «Estoy recibiendo demasiadas solicitudes o se acabó el saldo de la API. Intenta en un momento.» · siguiente mensaje: «recuperado»",
+      "ms": 2124
+    },
+    {
+      "nivel": 3,
+      "id": "L3-03",
+      "nombre": "API responde 500 (error interno)",
+      "pasa": true,
+      "detalle": "aviso: «Error de la API: falla simulada» · siguiente mensaje: «recuperado»",
+      "ms": 2121
+    },
+    {
+      "nivel": 3,
+      "id": "L3-04",
+      "nombre": "API responde 529 (servidores saturados)",
+      "pasa": true,
+      "detalle": "aviso: «Error de la API: falla simulada» · siguiente mensaje: «recuperado»",
+      "ms": 2102
+    },
+    {
+      "nivel": 3,
+      "id": "L3-05",
+      "nombre": "Sin internet: avisa y se recupera al volver la red",
+      "pasa": true,
+      "detalle": "aviso: «Sin conexión a internet o no pude contactar a Claude.» · luego: «volví»",
+      "ms": 2140
+    },
+    {
+      "nivel": 3,
+      "id": "L3-06",
+      "nombre": "Respuesta corrupta (JSON inválido)",
+      "pasa": true,
+      "detalle": "aviso: «Me llegó una respuesta dañada de Claude. Intenta de nuevo.» · luego: «bien»",
+      "ms": 2120
+    },
+    {
+      "nivel": 3,
+      "id": "L3-07",
+      "nombre": "Respuesta vacía (sin contenido)",
+      "pasa": true,
+      "detalle": "respuesta: «Listo.»",
+      "ms": 1147
+    },
+    {
+      "nivel": 3,
+      "id": "L3-08",
+      "nombre": "La API se queda colgada (no responde nunca)",
+      "pasa": true,
+      "detalle": "estado del núcleo tras 4,5 s: reposo · aviso: «Claude se está tardando demasiado en responder. Intenta de nuevo en un momento.»",
+      "ms": 4736
+    },
+    {
+      "nivel": 3,
+      "id": "L3-09",
+      "nombre": "País no soportado en búsqueda web → reintenta sin ubicación",
+      "pasa": true,
+      "detalle": "llamadas: 2",
+      "ms": 1151
+    },
+    {
+      "nivel": 3,
+      "id": "L3-10",
+      "nombre": "Bloque «thinking» rechazado → reintenta sin él",
+      "pasa": true,
+      "detalle": "system constante en las 3 llamadas: true",
+      "ms": 1154
+    },
+    {
+      "nivel": 4,
+      "id": "L4-01",
+      "nombre": "Bucle infinito de herramientas se corta solo",
+      "pasa": true,
+      "detalle": "vueltas: 8, estado final: reposo",
+      "ms": 2754
+    },
+    {
+      "nivel": 4,
+      "id": "L4-02",
+      "nombre": "«pause_turn» repetido de la búsqueda web",
+      "pasa": true,
+      "detalle": "llamadas: 3",
+      "ms": 1742
+    },
+    {
+      "nivel": 4,
+      "id": "L4-03",
+      "nombre": "Historial largo se recorta y siempre empieza por el usuario",
+      "pasa": true,
+      "detalle": "mensajes enviados: 17, primero: user, alternan: true",
+      "ms": 1140
+    },
+    {
+      "nivel": 4,
+      "id": "L4-04",
+      "nombre": "Historial dañado (roles repetidos o vacíos)",
+      "pasa": true,
+      "detalle": "enviado: [\"user\"]",
+      "ms": 1150
+    },
+    {
+      "nivel": 4,
+      "id": "L4-05",
+      "nombre": "Enlaces peligrosos en acciones (javascript:, intent falsos)",
+      "pasa": true,
+      "detalle": "enlaces: https://www.google.com/search?q=javascript%3Aalert(1)%20 | https://www.google.com/maps/dir/?api=1&destination=%22%3E%3Cscript%3Ealert(1)%3C%2Fscript%3E&travelmode=driving&dir_action=navigate",
+      "ms": 1168
+    },
+    {
+      "nivel": 4,
+      "id": "L4-06",
+      "nombre": "Recordatorio vencido avisa una sola vez",
+      "pasa": true,
+      "detalle": "avisos mostrados: 1",
+      "ms": 6672
+    },
+    {
+      "nivel": 5,
+      "id": "L5-01",
+      "nombre": "Azure falla (clave mala) → usa la voz del teléfono",
+      "pasa": true,
+      "detalle": "voz del teléfono dijo: «Te respondo igual.»",
+      "ms": 1441
+    },
+    {
+      "nivel": 5,
+      "id": "L5-02",
+      "nombre": "ElevenLabs sin red → usa la voz del teléfono",
+      "pasa": true,
+      "detalle": "dijo: «Sigo hablando.»",
+      "ms": 1436
+    },
+    {
+      "nivel": 5,
+      "id": "L5-03",
+      "nombre": "Teléfono sin síntesis ni reconocimiento de voz",
+      "pasa": true,
+      "detalle": "aviso: «Este navegador no soporta reconocimiento de voz. Usa Chrome en Android.» · errores JS: 0",
+      "ms": 2371
+    },
+    {
+      "nivel": 5,
+      "id": "L5-04",
+      "nombre": "Memoria del teléfono llena (cuota de almacenamiento)",
+      "pasa": true,
+      "detalle": "respuesta: «Hecho.», errores JS: 0",
+      "ms": 1451
+    },
+    {
+      "nivel": 5,
+      "id": "L5-05",
+      "nombre": "Abre sin señal (modo avión) gracias a la caché",
+      "pasa": true,
+      "detalle": "interfaz cargada sin red: true",
+      "ms": 1555
+    },
+    {
+      "nivel": 5,
+      "id": "L5-06",
+      "nombre": "Las claves solo viajan a su propio servicio",
+      "pasa": true,
+      "detalle": "ninguna clave salió hacia otro dominio ni en la URL",
+      "ms": 1407
+    },
+    {
+      "nivel": 5,
+      "id": "L5-07",
+      "nombre": "Instrucciones maliciosas dentro de un resultado no ejecutan acciones solas",
+      "pasa": true,
+      "detalle": "navegó sola: false · requiere que el usuario toque el botón: true",
+      "ms": 1137
+    }
+  ]
+}

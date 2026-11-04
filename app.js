@@ -12,7 +12,20 @@ const cfg = Object.assign({
 }, LS.get('cfg', {}));
 let contactos = LS.get('contactos', []);      // [{nombre, tel}]
 let memoria   = LS.get('memoria', []);        // ["dato", ...]
-let historial = LS.get('historial', []);      // [{role, content:string}]
+// Historial: solo turnos válidos, alternando usuario/Phastos, empezando por el usuario y con máximo 16 mensajes
+function limpiarHistorial(h) {
+  const out = [];
+  (Array.isArray(h) ? h : []).forEach(m => {
+    if (!m || (m.role !== 'user' && m.role !== 'assistant') || typeof m.content !== 'string' || !m.content.trim()) return;
+    if (out.length && out[out.length - 1].role === m.role) out[out.length - 1] = { role: m.role, content: m.content }; // dos seguidos del mismo rol: queda el último
+    else out.push({ role: m.role, content: m.content });
+  });
+  while (out.length && out[0].role !== 'user') out.shift();
+  if (out.length && out[out.length - 1].role !== 'assistant') out.pop();
+  let r = out.slice(-16); if (r.length && r[0].role !== 'user') r = r.slice(1);
+  return r;
+}
+let historial = limpiarHistorial(LS.get('historial', []));      // [{role, content:string}]
 let recordatorios = LS.get('recordatorios', []); // [{id, texto, cuando:ms}]
 // Diccionario de pronunciación heredado del Phastos del proyecto (solo afecta lo que se lee en voz alta)
 let pronunciacion = LS.get('pronunciacion', [
@@ -380,32 +393,48 @@ CÓMO TRABAJAS
 }
 
 let sinUbicacion = false;
-async function llamarClaude(mensajes) {
-  try { return await llamarClaudeUna(mensajes); }
+// Quita los bloques de razonamiento interno (thinking) por si la API los rechaza
+const sinThinking = msgs => msgs.map(m => Array.isArray(m.content) && m.role === 'assistant'
+  ? { ...m, content: m.content.filter(b => b.type !== 'thinking' && b.type !== 'redacted_thinking') } : m)
+  .filter(m => !Array.isArray(m.content) || m.content.length);
+async function llamarClaude(mensajes, sys) {
+  try { return await llamarClaudeUna(mensajes, sys); }
   catch (e) {
-    if (e.status === 400 && /user_location|country|city|timezone/i.test(e.message) && !sinUbicacion) { sinUbicacion = true; return llamarClaudeUna(mensajes); }
+    if (e.status === 400 && /user_location|country|city|timezone/i.test(e.message) && !sinUbicacion) { sinUbicacion = true; return llamarClaude(mensajes, sys); }
+    if (e.status === 400 && /thinking/i.test(e.message)) return llamarClaudeUna(sinThinking(mensajes), sys);
     throw e;
   }
 }
-async function llamarClaudeUna(mensajes) {
+async function llamarClaudeUna(mensajes, sys) {
   const tools = [...herramientas];
   if (cfg.buscar) tools.push({ type: 'web_search_20250305', name: 'web_search', max_uses: 3,
     ...(sinUbicacion ? {} : { user_location: { type: 'approximate', timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Bogota', ...(cfg.ciudad ? { city: cfg.ciudad } : {}) } }) });
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
+  const ctrl = new AbortController();
+  const reloj = setTimeout(() => ctrl.abort(), window.__phastosTimeout || 45000); // si Claude no responde, no quedarse «pensando» para siempre
+  let r;
+  try {
+  r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST', signal: ctrl.signal,
     headers: {
       'content-type': 'application/json',
       'x-api-key': cfg.key,
       'anthropic-version': '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true'
     },
-    body: JSON.stringify({ model: cfg.modelo, max_tokens: 1024, system: sistema(), tools, messages: mensajes })
+    body: JSON.stringify({ model: cfg.modelo, max_tokens: 1024, system: sys, tools, messages: mensajes })
   });
+  } catch (e) {
+    clearTimeout(reloj);
+    if (e.name === 'AbortError') { const t = new Error('tiempo'); t.tiempo = true; throw t; }
+    throw e;
+  }
   if (!r.ok) {
     let det = ''; try { det = (await r.json()).error?.message || ''; } catch {}
     const e = new Error(det || ('HTTP ' + r.status)); e.status = r.status; throw e;
   }
-  return r.json();
+  try { return await r.json(); }
+  catch { const e = new Error('respuesta dañada'); e.danada = true; throw e; }
+  finally { clearTimeout(reloj); }
 }
 
 let ocupado = false;
@@ -415,11 +444,13 @@ async function procesar(texto) {
   ocupado = true; pausarWake();
   burbuja('user', texto);
   estado('pensando', 'Pensando…');
+  const sys = sistema(); // fijo durante toda la respuesta (la API exige el mismo system en cada vuelta)
+  historial = limpiarHistorial(historial);
   const mensajes = [...historial, { role: 'user', content: texto }];
   let respuestaFinal = '', fuentes = [];
   try {
     for (let vuelta = 0; vuelta < 8; vuelta++) {
-      const res = await llamarClaude(mensajes);
+      const res = await llamarClaude(mensajes, sys);
       mensajes.push({ role: 'assistant', content: res.content });
       for (const b of res.content) {
         if (b.type === 'text') {
@@ -449,6 +480,8 @@ async function procesar(texto) {
     const msg = e.status === 401 ? 'La API key no es válida. Revísala en Ajustes.'
       : e.status === 429 ? 'Estoy recibiendo demasiadas solicitudes o se acabó el saldo de la API. Intenta en un momento.'
       : e.status === 404 ? 'Ese modelo no está disponible para tu cuenta. Cambia el modelo en Ajustes.'
+      : e.tiempo ? 'Claude se está tardando demasiado en responder. Intenta de nuevo en un momento.'
+      : e.danada ? 'Me llegó una respuesta dañada de Claude. Intenta de nuevo.'
       : (e.status ? 'Error de la API: ' + e.message : 'Sin conexión a internet o no pude contactar a Claude.');
     burbuja('sys', msg); estado(); hablar(msg);
   }
