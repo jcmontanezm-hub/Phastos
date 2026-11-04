@@ -350,7 +350,7 @@ CÓMO TRABAJAS
 async function llamarClaude(mensajes) {
   const tools = [...herramientas];
   if (cfg.buscar) tools.push({ type: 'web_search_20250305', name: 'web_search', max_uses: 3,
-    user_location: { type: 'approximate', country: 'CO', timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Bogota', ...(cfg.ciudad ? { city: cfg.ciudad } : {}) } });
+    user_location: { type: 'approximate', timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Bogota', ...(cfg.ciudad ? { city: cfg.ciudad } : {}) } });
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
