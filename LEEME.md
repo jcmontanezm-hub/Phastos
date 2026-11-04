@@ -33,3 +33,9 @@ Truco: si mantienes presionado el ícono de Phastos aparece el atajo **Hablar**,
 
 ## Costos aproximados
 Con Haiku 5.5 una conversación normal cuesta fracciones de centavo de dólar. Cada búsqueda web cuesta USD 0,01 adicional (máx. 3 por pregunta).
+
+## Voz de Azure (voces neuronales de Microsoft, como en Edge)
+1. Entra a portal.azure.com (puedes crear la cuenta gratis) → **Crear un recurso** → busca **Speech** (servicio de Voz de Azure AI).
+2. Plan de tarifa **Free F0** (500.000 caracteres al mes), elige una región (por ejemplo *East US*) y crea el recurso.
+3. En el recurso, abre **Claves y punto de conexión** y copia la **KEY 1** y la **Ubicación/Región** (por ejemplo `eastus`).
+4. En Phastos: ⚙ → Motor de voz → **Microsoft Azure** → pega la clave y la región → **Cargar voces de Azure** → elige la voz (Gonzalo o Salomé son de Colombia) → **Probar voz** → Guardar.

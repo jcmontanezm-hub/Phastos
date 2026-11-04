@@ -8,7 +8,7 @@ const LS = {
   set(k, v) { try { localStorage.setItem('phastos.' + k, JSON.stringify(v)); } catch {} }
 };
 const cfg = Object.assign({
-  key: '', modelo: 'claude-haiku-5-5', nombre: '', ciudad: '', voz: '', vel: 1.05, wake: false, buscar: true, elKey: '', elVoz: ''
+  key: '', modelo: 'claude-haiku-5-5', nombre: '', ciudad: '', voz: '', vel: 1.05, wake: false, buscar: true, elKey: '', elVoz: '', motor: '', azKey: '', azRegion: 'eastus', azVoz: 'es-CO-GonzaloNeural'
 }, LS.get('cfg', {}));
 let contactos = LS.get('contactos', []);      // [{nombre, tel}]
 let memoria   = LS.get('memoria', []);        // ["dato", ...]
@@ -91,7 +91,10 @@ async function hablarEL(texto) {
       voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0.25, use_speaker_boost: true } })
   });
   if (!r.ok) throw new Error('ElevenLabs ' + r.status);
-  const url = URL.createObjectURL(await r.blob());
+  await reproducir(await r.blob());
+}
+async function reproducir(blob) {
+  const url = URL.createObjectURL(blob);
   pausarWake(); estado('hablando', 'Hablando… (toca para callarme)');
   await new Promise(res => {
     audioEL = new Audio(url);
@@ -100,14 +103,39 @@ async function hablarEL(texto) {
   });
   estado(); reanudarWake();
 }
+// Voz de Azure (las mismas voces neuronales de Microsoft que trae Edge)
+const escXml = t => t.replace(/[<>&'"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c]));
+async function hablarAzure(texto) {
+  const lang = (cfg.azVoz.match(/^[a-z]{2}-[A-Z]{2}/) || ['es-CO'])[0];
+  const rate = Math.round(((Number(cfg.vel) || 1) - 1) * 100);
+  const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${lang}"><voice name="${escXml(cfg.azVoz)}"><prosody rate="${rate >= 0 ? '+' : ''}${rate}%">${escXml(paraVoz(texto).slice(0, 1500))}</prosody></voice></speak>`;
+  const r = await fetch(`https://${encodeURIComponent(cfg.azRegion)}.tts.speech.microsoft.com/cognitiveservices/v1`, {
+    method: 'POST',
+    headers: { 'Ocp-Apim-Subscription-Key': cfg.azKey, 'Content-Type': 'application/ssml+xml', 'X-Microsoft-OutputFormat': 'audio-24khz-48kbitrate-mono-mp3' },
+    body: ssml
+  });
+  if (!r.ok) throw new Error('Azure ' + r.status);
+  await reproducir(await r.blob());
+}
+async function vocesAzure() {
+  const r = await fetch(`https://${encodeURIComponent(cfg.azRegion)}.tts.speech.microsoft.com/cognitiveservices/voices/list`, { headers: { 'Ocp-Apim-Subscription-Key': cfg.azKey } });
+  if (!r.ok) throw new Error('Azure ' + r.status);
+  return (await r.json()).filter(v => /^es-/.test(v.Locale));
+}
 function callar() { if (audioEL) audioEL.pause(); if ('speechSynthesis' in window) speechSynthesis.cancel(); }
 const hablandoAhora = () => !!audioEL || ('speechSynthesis' in window && speechSynthesis.speaking);
 async function hablar(texto) {
-  if (cfg.elKey && cfg.elVoz && texto) {
-    try { return await hablarEL(texto); } catch (e) { console.warn('ElevenLabs falló, uso la voz del navegador', e); }
+  const motor = cfg.motor || (cfg.elKey && cfg.elVoz ? 'eleven' : 'navegador');
+  if (texto && motor === 'azure' && cfg.azKey) {
+    try { return await hablarAzure(texto); } catch (e) { console.warn('Azure falló, uso la voz del navegador', e); avisoVoz('Azure no respondió (' + e.message + '). Revisa la clave y la región en Ajustes.'); }
+  }
+  if (texto && motor === 'eleven' && cfg.elKey && cfg.elVoz) {
+    try { return await hablarEL(texto); } catch (e) { console.warn('ElevenLabs falló, uso la voz del navegador', e); avisoVoz('ElevenLabs no respondió (' + e.message + ').'); }
   }
   return hablarNavegador(texto);
 }
+let avisado = false;
+function avisoVoz(t) { if (!avisado) { avisado = true; burbuja('sys', t + ' Por ahora uso la voz del navegador.'); } }
 function hablarNavegador(texto) {
   return new Promise(res => {
     if (!('speechSynthesis' in window) || !texto) return res();
@@ -465,12 +493,12 @@ function pintarListas() {
 }
 function abrirAjustes() {
   $('#cfgKey').value = cfg.key; $('#cfgModelo').value = cfg.modelo; $('#cfgNombre').value = cfg.nombre;
-  $('#cfgCiudad').value = cfg.ciudad; $('#cfgElKey').value = cfg.elKey; $('#cfgElVoz').value = cfg.elVoz; $('#cfgVel').value = cfg.vel; $('#cfgWake').checked = cfg.wake; $('#cfgBuscar').checked = cfg.buscar;
+  $('#cfgCiudad').value = cfg.ciudad; $('#cfgElKey').value = cfg.elKey; $('#cfgElVoz').value = cfg.elVoz; $('#cfgMotor').value = cfg.motor || (cfg.elKey ? 'eleven' : 'navegador'); $('#cfgAzKey').value = cfg.azKey; $('#cfgAzRegion').value = cfg.azRegion; pintarVozAz([{ ShortName: cfg.azVoz, LocalName: cfg.azVoz.replace(/^[a-z]{2}-[A-Z]{2}-|Neural$/g, ''), Locale: cfg.azVoz.slice(0, 5) }]); mostrarMotor(); $('#cfgVel').value = cfg.vel; $('#cfgWake').checked = cfg.wake; $('#cfgBuscar').checked = cfg.buscar;
   cargarVoces(); pintarListas(); dlg.showModal();
 }
 $('#btnGuardar').addEventListener('click', () => {
   Object.assign(cfg, { key: $('#cfgKey').value.trim(), modelo: $('#cfgModelo').value, nombre: $('#cfgNombre').value.trim(),
-    ciudad: $('#cfgCiudad').value.trim(), elKey: $('#cfgElKey').value.trim(), elVoz: $('#cfgElVoz').value.trim(), voz: $('#cfgVoz').value, vel: Number($('#cfgVel').value), wake: $('#cfgWake').checked, buscar: $('#cfgBuscar').checked });
+    ciudad: $('#cfgCiudad').value.trim(), elKey: $('#cfgElKey').value.trim(), elVoz: $('#cfgElVoz').value.trim(), motor: $('#cfgMotor').value, azKey: $('#cfgAzKey').value.trim(), azRegion: $('#cfgAzRegion').value.trim().toLowerCase() || 'eastus', azVoz: $('#cfgAzVoz').value || cfg.azVoz, voz: $('#cfgVoz').value, vel: Number($('#cfgVel').value), wake: $('#cfgWake').checked, buscar: $('#cfgBuscar').checked });
   LS.set('cfg', cfg);
   if (cfg.wake) iniciarWake(); else detenerWake();
   estado();
@@ -502,7 +530,28 @@ orb.addEventListener('click', () => {
 });
 $('#formTexto').addEventListener('submit', e => { e.preventDefault(); const t = $('#texto').value; $('#texto').value = ''; procesar(t); });
 $('#btnAjustes').addEventListener('click', abrirAjustes);
-$('#btnProbarVoz').addEventListener('click', () => { const v = cfg.voz; cfg.voz = $('#cfgVoz').value; hablarNavegador('Hola, soy Phastos. Así sueno con esta voz.').then(() => { cfg.voz = v; }); });
+function mostrarMotor() { const m = $('#cfgMotor').value; document.querySelectorAll('[data-motor]').forEach(el => { el.hidden = el.dataset.motor !== m; }); }
+$('#cfgMotor').addEventListener('change', mostrarMotor);
+function pintarVozAz(lista) {
+  const sel = $('#cfgAzVoz'), actual = sel.value || cfg.azVoz; sel.innerHTML = '';
+  lista.sort((a, b) => (b.Locale === 'es-CO') - (a.Locale === 'es-CO') || a.Locale.localeCompare(b.Locale)).forEach(v => {
+    const o = document.createElement('option'); o.value = v.ShortName; o.textContent = `${v.LocalName || v.DisplayName} · ${v.Locale}${v.Gender ? ' · ' + (v.Gender === 'Male' ? 'hombre' : 'mujer') : ''}`; sel.appendChild(o); });
+  if ([...sel.options].some(o => o.value === actual)) sel.value = actual;
+}
+$('#btnVocesAz').addEventListener('click', async () => {
+  const k = cfg.azKey, rg = cfg.azRegion; cfg.azKey = $('#cfgAzKey').value.trim(); cfg.azRegion = $('#cfgAzRegion').value.trim().toLowerCase() || 'eastus';
+  $('#btnVocesAz').textContent = 'Cargando…';
+  try { pintarVozAz(await vocesAzure()); $('#btnVocesAz').textContent = '✔ Voces cargadas'; }
+  catch (e) { $('#btnVocesAz').textContent = '✖ ' + (e.message.includes('401') ? 'Clave o región incorrecta' : e.message); }
+  cfg.azKey = k; cfg.azRegion = rg;
+});
+$('#btnProbarVoz').addEventListener('click', async () => {
+  const copia = { ...cfg };
+  Object.assign(cfg, { motor: $('#cfgMotor').value, voz: $('#cfgVoz').value, azKey: $('#cfgAzKey').value.trim(), azRegion: $('#cfgAzRegion').value.trim().toLowerCase() || 'eastus',
+    azVoz: $('#cfgAzVoz').value || cfg.azVoz, elKey: $('#cfgElKey').value.trim(), elVoz: $('#cfgElVoz').value.trim(), vel: Number($('#cfgVel').value) });
+  avisado = false;
+  try { await hablar('Hola, soy Fastos. Así sueno con esta voz.'); } finally { Object.assign(cfg, copia); }
+});
 $('#btnLimpiar').addEventListener('click', () => { historial = []; LS.set('historial', []); chat.innerHTML = ''; document.body.classList.remove('charla'); burbuja('sys', 'Conversación nueva. Lo que te pedí recordar sigue guardado.'); });
 
 // atajos de la app instalada (?accion=hablar)

@@ -56,13 +56,27 @@
     </label>
     <label>Tu nombre <input id="cfgNombre" type="text" placeholder="Cesar"></label>
     <label>Ciudad (para búsquedas y clima) <input id="cfgCiudad" type="text" placeholder="Ibagué"></label>
-    <label>Voz de Phastos <select id="cfgVoz"></select></label>
-    <button type="button" id="btnProbarVoz" class="mini">▶ Probar voz</button>
-    <details><summary>Voz propia con ElevenLabs (opcional)</summary>
+    <h3>Voz</h3>
+    <label>Motor de voz
+      <select id="cfgMotor">
+        <option value="navegador">Voz del teléfono (gratis, sin clave)</option>
+        <option value="azure">Microsoft Azure — voces neuronales como en Edge</option>
+        <option value="eleven">ElevenLabs — voz propia</option>
+      </select>
+    </label>
+    <div data-motor="navegador"><label>Voz del teléfono <select id="cfgVoz"></select></label></div>
+    <div data-motor="azure" class="bloque">
+      <label>Clave de Azure Speech <input id="cfgAzKey" type="password" autocomplete="off" placeholder="KEY 1 del recurso Speech"></label>
+      <label>Región del recurso <input id="cfgAzRegion" type="text" autocomplete="off" placeholder="eastus"></label>
+      <button type="button" id="btnVocesAz" class="mini">⟳ Cargar voces de Azure</button>
+      <label>Voz de Azure <select id="cfgAzVoz"></select></label>
+      <small>Plan gratis (F0): 500.000 caracteres al mes. Si Azure falla, Phastos usa la voz del teléfono.</small>
+    </div>
+    <div data-motor="eleven" class="bloque">
       <label>API key de ElevenLabs <input id="cfgElKey" type="password" autocomplete="off"></label>
       <label>Voice ID <input id="cfgElVoz" type="text" autocomplete="off"></label>
-      <small>Si falla o lo dejas vacío, Phastos usa la voz gratis del navegador.</small>
-    </details>
+    </div>
+    <button type="button" id="btnProbarVoz" class="mini">▶ Probar voz</button>
     <label>Velocidad de voz <input id="cfgVel" type="range" min="0.7" max="1.5" step="0.05"></label>
     <label class="check"><input id="cfgWake" type="checkbox"> Escuchar «Oye Phastos» con la app abierta</label>
     <label class="check"><input id="cfgBuscar" type="checkbox"> Permitir búsquedas en internet</label>
