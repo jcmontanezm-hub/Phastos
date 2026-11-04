@@ -1,5 +1,5 @@
 // Service worker de Phastos: deja la app instalable y abre aunque no haya señal.
-const CACHE = 'phastos-v1';
+const CACHE = 'phastos-v3';
 const APP = ['./', 'index.html', 'style.css', 'app.js', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(APP))); self.skipWaiting(); });
 self.addEventListener('activate', e => {

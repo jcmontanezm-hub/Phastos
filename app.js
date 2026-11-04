@@ -29,12 +29,16 @@ function pronunciar(t) {
 
 // ---------------------------------------------------------------- UI
 const $ = s => document.querySelector(s);
-const chat = $('#chat'), orb = $('#orb'), estadoTxt = $('#estadoTxt'), dot = $('#estadoDot');
+const chat = $('#chat'), orb = $('#orb'), estadoTxt = $('#estadoTxt'), scene = $('#scene'), estadoLbl = $('#estadoLbl');
+{ const wb = $('#wavebeam'); for (let n = 0; n < 53; n++) wb.appendChild(document.createElement('i')); }
+const NOMBRES_ESTADO = { reposo: 'en reposo', escuchando: 'escuchando', pensando: 'pensando', hablando: 'hablando' };
 
 function estado(modo, texto) {
-  orb.className = 'orb ' + (modo || '');
-  dot.className = 'dot ' + (modo === 'escuchando' ? 'listen' : (cfg.key ? 'on' : ''));
-  estadoTxt.textContent = texto ?? (cfg.wake ? 'Di «Oye Phastos» o toca el orbe' : 'Toca el orbe para hablar');
+  const e = modo || 'reposo';
+  scene.dataset.estado = e;
+  scene.dataset.anim = (e === 'escuchando' || e === 'hablando') ? 'signal' : 'orbital'; // animación «Automática» del original
+  estadoLbl.textContent = NOMBRES_ESTADO[e] || e;
+  estadoTxt.textContent = texto ?? (cfg.wake ? 'Di «Oye Phastos» o toca el núcleo' : 'Toca el núcleo para hablar');
 }
 function burbuja(rol, texto, fuentes) {
   const d = document.createElement('div');
@@ -47,7 +51,7 @@ function burbuja(rol, texto, fuentes) {
       `<a href="${escapar(u.url)}" target="_blank" rel="noopener">${escapar(u.titulo || new URL(u.url).hostname)}</a>`).join(' · ');
     d.appendChild(f);
   }
-  chat.appendChild(d); chat.scrollTop = chat.scrollHeight;
+  chat.appendChild(d); chat.scrollTop = chat.scrollHeight; document.body.classList.add('charla');
   return d;
 }
 function botonAccion(etiqueta, href, onClick) {
@@ -70,7 +74,7 @@ function cargarVoces() {
   voces.sort((a, b) => puntos(b) - puntos(a));
   const sel = $('#cfgVoz'); sel.innerHTML = '';
   if (!voces.length) sel.innerHTML = '<option value="">Voz por defecto del sistema</option>';
-  voces.forEach(v => { const o = document.createElement('option'); o.value = v.name; o.textContent = `${v.name} (${v.lang})`; sel.appendChild(o); });
+  voces.forEach(v => { const o = document.createElement('option'); o.value = v.name; o.textContent = v.name.replace(/^Microsoft\s+/, '').replace(/\s*-\s*Spanish.*/, '') + ' · ' + v.lang + (/natural|online|neural/i.test(v.name) ? ' ★' : ''); sel.appendChild(o); });
   if (cfg.voz) sel.value = cfg.voz;
 }
 if ('speechSynthesis' in window) { cargarVoces(); speechSynthesis.onvoiceschanged = cargarVoces; }
@@ -347,10 +351,18 @@ CÓMO TRABAJAS
 - Si te corrige cómo pronuncias una palabra, usa ensenar_pronunciacion; aplica desde tu siguiente frase.`;
 }
 
+let sinUbicacion = false;
 async function llamarClaude(mensajes) {
+  try { return await llamarClaudeUna(mensajes); }
+  catch (e) {
+    if (e.status === 400 && /user_location|country|city|timezone/i.test(e.message) && !sinUbicacion) { sinUbicacion = true; return llamarClaudeUna(mensajes); }
+    throw e;
+  }
+}
+async function llamarClaudeUna(mensajes) {
   const tools = [...herramientas];
   if (cfg.buscar) tools.push({ type: 'web_search_20250305', name: 'web_search', max_uses: 3,
-    user_location: { type: 'approximate', timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Bogota', ...(cfg.ciudad ? { city: cfg.ciudad } : {}) } });
+    ...(sinUbicacion ? {} : { user_location: { type: 'approximate', timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Bogota', ...(cfg.ciudad ? { city: cfg.ciudad } : {}) } }) });
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -490,7 +502,8 @@ orb.addEventListener('click', () => {
 });
 $('#formTexto').addEventListener('submit', e => { e.preventDefault(); const t = $('#texto').value; $('#texto').value = ''; procesar(t); });
 $('#btnAjustes').addEventListener('click', abrirAjustes);
-$('#btnLimpiar').addEventListener('click', () => { historial = []; LS.set('historial', []); chat.innerHTML = ''; burbuja('sys', 'Conversación nueva. Lo que te pedí recordar sigue guardado.'); });
+$('#btnProbarVoz').addEventListener('click', () => { const v = cfg.voz; cfg.voz = $('#cfgVoz').value; hablarNavegador('Hola, soy Phastos. Así sueno con esta voz.').then(() => { cfg.voz = v; }); });
+$('#btnLimpiar').addEventListener('click', () => { historial = []; LS.set('historial', []); chat.innerHTML = ''; document.body.classList.remove('charla'); burbuja('sys', 'Conversación nueva. Lo que te pedí recordar sigue guardado.'); });
 
 // atajos de la app instalada (?accion=hablar)
 const params = new URLSearchParams(location.search);

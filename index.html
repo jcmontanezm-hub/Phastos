@@ -3,32 +3,42 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0b0f1a">
+<meta name="theme-color" content="#080d11">
 <title>Phastos</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header class="top">
-  <div class="brand"><span class="dot" id="estadoDot"></span> Phastos</div>
+  <div class="brand"><span class="logo">✳</span><span><b>PHASTOS</b><small>ESTADO <b id="estadoLbl">en reposo</b></small></span></div>
   <div class="top-actions">
     <button class="icon-btn" id="btnLimpiar" title="Nueva conversación" aria-label="Nueva conversación">⟲</button>
     <button class="icon-btn" id="btnAjustes" title="Ajustes" aria-label="Ajustes">⚙</button>
   </div>
 </header>
 
+<section class="scene" id="scene" data-anim="orbital" data-estado="reposo">
+  <div class="ring r1"></div><div class="ring r2"></div><div class="ambient"></div>
+  <button class="core" id="orb" aria-label="Hablar con Phastos">
+    <div class="orb"><div class="atomring"><i></i></div><div class="atomring rB"><i></i></div><div class="atomring rC"><i></i></div><div class="orbitCore"></div></div>
+    <div class="sig"><div class="wavefield"><i></i><i></i><i></i><i></i><i></i></div><div class="wavebeam" id="wavebeam"></div><div class="pulseCore"></div></div>
+  </button>
+  <div class="greeting">
+    <div class="overline">✳　Phastos está contigo</div>
+    <p class="heard" id="estadoTxt" aria-live="polite">Toca el núcleo para hablar</p>
+  </div>
+</section>
+
 <main id="chat" aria-live="polite"></main>
 
-<section class="orb-zone">
-  <div class="estado" id="estadoTxt">Toca el orbe o di «Oye Phastos»</div>
-  <button class="orb" id="orb" aria-label="Hablar con Phastos"><span class="ring"></span><span class="core"></span></button>
-  <form class="entrada" id="formTexto">
-    <input id="texto" type="text" placeholder="O escríbele…" autocomplete="off" enterkeyhint="send">
-    <button type="submit" aria-label="Enviar">➤</button>
-  </form>
-</section>
+<form class="entrada" id="formTexto">
+  <input id="texto" type="text" placeholder="O escríbele…" autocomplete="off" enterkeyhint="send">
+  <button type="submit" aria-label="Enviar">➤</button>
+</form>
 
 <dialog id="ajustes">
   <form method="dialog" class="ajustes-form">
@@ -47,6 +57,7 @@
     <label>Tu nombre <input id="cfgNombre" type="text" placeholder="Cesar"></label>
     <label>Ciudad (para búsquedas y clima) <input id="cfgCiudad" type="text" placeholder="Ibagué"></label>
     <label>Voz de Phastos <select id="cfgVoz"></select></label>
+    <button type="button" id="btnProbarVoz" class="mini">▶ Probar voz</button>
     <details><summary>Voz propia con ElevenLabs (opcional)</summary>
       <label>API key de ElevenLabs <input id="cfgElKey" type="password" autocomplete="off"></label>
       <label>Voice ID <input id="cfgElVoz" type="text" autocomplete="off"></label>
